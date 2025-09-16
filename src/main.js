@@ -10,11 +10,20 @@ const inputEl = document.getElementById('inputText');
 const summarizeBtn = document.getElementById('summarizeBtn');
 const summaryLengthEl = document.getElementById('summaryLength');
 const lengthValueEl = document.getElementById('lengthValue');
-const outputContainer = document.getElementById('outputContainer');
+const placeholderEl = document.getElementById('placeholder');
 const loadingIndicator = document.getElementById('loadingIndicator');
+const summaryResultsEl = document.getElementById('summaryResults');
 const algorithmEl = document.getElementById('algorithm');
 const keywordCountEl = document.getElementById('keywordCount');
 const wordCountEl = document.getElementById('wordCount');
+
+// --- Word count tracking ---
+inputEl.addEventListener('input', () => {
+  const words = inputEl.value.trim().split(/\s+/).filter(Boolean);
+  wordCountEl.textContent = `${words.length} word${
+    words.length !== 1 ? 's' : ''
+  }`;
+});
 
 // --- Slider label update ---
 summaryLengthEl.addEventListener('input', () => {
@@ -23,7 +32,6 @@ summaryLengthEl.addEventListener('input', () => {
 
 // --- Renderers ---
 function renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords) {
-  // Extract top-K sentences in their original order
   const topSentences = rankedIndexes
     .sort((a, b) => a - b)
     .map((i) => sentencesData[i].sentence);
@@ -32,7 +40,8 @@ function renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords) {
     .map((s) => `<p class="mb-2 leading-relaxed">${s}</p>`)
     .join('');
 
-  const keywordsHTML = `
+  const keywordsHTML = keywords.length
+    ? `
     <div class="mt-6">
       <h3 class="font-semibold text-gray-700 mb-2">🔑 Top Keywords</h3>
       <div class="flex flex-wrap gap-2">
@@ -44,14 +53,13 @@ function renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords) {
           .join('')}
       </div>
     </div>
-  `;
+  `
+    : '';
 
-  outputContainer.innerHTML = `
-    <div>
-      <h3 class="font-semibold text-gray-700 mb-3">📄 Summary</h3>
-      <div class="text-gray-800">${summaryHTML}</div>
-      ${keywords.length ? keywordsHTML : ''}
-    </div>
+  summaryResultsEl.innerHTML = `
+    <h3 class="font-semibold text-gray-700 mb-3">📄 Summary</h3>
+    <div class="text-gray-800">${summaryHTML}</div>
+    ${keywordsHTML}
   `;
 }
 
@@ -69,7 +77,7 @@ function frequencySummarize(text, topK) {
   return { sentencesData, rankedIndexes };
 }
 
-// --- Simple summarizer (first N sentences) ---
+// --- Simple summarizer ---
 function simpleSummarize(text, topK) {
   const sentencesData = processText(text);
   const rankedIndexes = Array.from(
@@ -83,41 +91,26 @@ function simpleSummarize(text, topK) {
 function keywordSummarize(text, topK, keywordCount) {
   const sentencesData = processText(text);
   const keywords = extractKeywords(text, keywordCount, 'words');
-
-  // Score sentences by keyword overlap
-  const scores = sentencesData.map((s) => {
-    const overlap = s.tokens.filter((t) => keywords.includes(t)).length;
-    return overlap;
-  });
-
+  const scores = sentencesData.map(
+    (s) => s.tokens.filter((t) => keywords.includes(t)).length
+  );
   const rankedIndexes = scores
     .map((score, i) => ({ score, i }))
     .sort((a, b) => b.score - a.score)
     .slice(0, topK)
     .map((x) => x.i);
-
   return { sentencesData, rankedIndexes, keywords };
 }
-
-// --- Word count tracking ---
-
-inputEl.addEventListener('input', () => {
-  // Split text into words (ignores multiple spaces/newlines)
-  const words = inputEl.value.trim().split(/\s+/).filter(Boolean);
-
-  // Update word count element
-  wordCountEl.textContent = `${words.length} word${
-    words.length !== 1 ? 's' : ''
-  }`;
-});
 
 // --- Main summarize flow ---
 summarizeBtn.addEventListener('click', () => {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  // Show loader
+  placeholderEl.classList.add('hidden');
+  summaryResultsEl.classList.add('hidden');
   loadingIndicator.classList.remove('hidden');
-  outputContainer.innerHTML = '';
 
   setTimeout(() => {
     const algo = algorithmEl.value;
@@ -139,7 +132,6 @@ summarizeBtn.addEventListener('click', () => {
         keywordCount
       ));
     } else {
-      // Default: PageRank summarizer
       sentencesData = processText(text);
       const simMatrix = buildSimilarityMatrix(sentencesData, 0.1);
       const scores = pageRank(simMatrix);
@@ -148,12 +140,24 @@ summarizeBtn.addEventListener('click', () => {
         .sort((a, b) => b.score - a.score)
         .slice(0, topK)
         .map((x) => x.i);
-
       keywords = extractKeywords(text, keywordCount, 'words');
     }
 
     renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords);
 
+    // Show results
     loadingIndicator.classList.add('hidden');
+    summaryResultsEl.classList.remove('hidden');
   }, 300);
+});
+
+const keywordCountContainer = document.getElementById('keywordCountContainer');
+
+// Toggle keyword count visibility
+algorithmEl.addEventListener('change', () => {
+  if (algorithmEl.value === 'keywords') {
+    keywordCountContainer.classList.remove('hidden');
+  } else {
+    keywordCountContainer.classList.add('hidden');
+  }
 });
