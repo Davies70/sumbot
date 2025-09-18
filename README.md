@@ -1,4 +1,7 @@
+
 # Text Summarizer
+
+[Live Demo](https://sumbot.netlify.app)
 
 A lightweight browser-based text summarization tool that extracts the most important sentences and keywords from a given text. It uses multiple summarization algorithms including frequency-based, simple, keyword-based, and graph-based (PageRank) methods.
 
