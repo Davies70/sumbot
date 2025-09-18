@@ -20,6 +20,7 @@
     "compromise": "^14.14.4",
     "node-nlp": "^5.0.0-alpha.5",
     "pagerank-js": "^0.3.0",
+    "stopword": "^3.1.5",
     "tailwindcss": "^4.1.13"
   }
 }
