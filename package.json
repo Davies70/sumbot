@@ -10,9 +10,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
+    "autoprefixer": "^10.4.24",
     "eslint": "^9.35.0",
     "eslint-plugin-import": "^2.32.0",
     "globals": "^16.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "vite": "^7.1.2"
   },
   "dependencies": {
@@ -20,7 +23,6 @@
     "compromise": "^14.14.4",
     "node-nlp": "^5.0.0-alpha.5",
     "pagerank-js": "^0.3.0",
-    "stopword": "^3.1.5",
-    "tailwindcss": "^4.1.13"
+    "stopword": "^3.1.5"
   }
 }

@@ -1,9 +1,8 @@
-
-# Text Summarizer
+# SumBot.AI: Text Summarizer
 
 [Live Demo](https://sumbot.netlify.app)
 
-A lightweight browser-based text summarization tool that extracts the most important sentences and keywords from a given text. It uses multiple summarization algorithms including frequency-based, simple, keyword-based, and graph-based (PageRank) methods.
+A high-performance browser-based text summarization tool that extracts the most important sentences and keywords from a given text. It leverages **Transformers.js** for neural AI summarization and uses **Web Workers** to ensure the interface remains smooth during heavy computation.
 
 ---
 
@@ -16,139 +15,139 @@ A lightweight browser-based text summarization tool that extracts the most impor
 - [Installation](#installation)
 - [Usage](#usage)
 - [Future Improvements](#future-improvements)
+- [How It Works](#how-it-works)
 
 ---
 
 ## Features
 
-- Input text in a textarea and generate concise summaries.
-- Choose among different summarization algorithms:
-  - **Frequency-based**: Summarizes based on word/token frequency.
-  - **Simple**: Picks the first N sentences.
-  - **Keyword-based**: Prioritizes sentences containing the top keywords.
-  - **Graph-based**: Uses a similarity matrix with PageRank to rank sentence importance.
-- Display top keywords in a tag cloud with clickable highlighting.
-- Copy, download (TXT), or export (PDF) the generated summary.
-- Live word count tracking.
-- Responsive and interactive UI using Tailwind CSS.
+- **Multi-Algorithm Support**: Choose between Neural AI, PageRank, Frequency-based, or Simple extraction.
+- **Neural (AI)**: Generates human-like, abstractive summaries using deep learning models.
+- **Graph-based**: Uses a similarity matrix with PageRank to rank sentence importance.
+- **Responsive Processing**: Integrated Web Workers prevent UI freezing by offloading heavy NLP math to background threads.
+- **Smart Validation**: The "Summarize" button is dynamically disabled until the 50-character minimum threshold is met.
+- **Efficient Loading**: The heavy AI engine only initializes if "Neural" mode is selected, keeping traditional modes lightning-fast.
+- **Export Options**: Save your results as versatile `.TXT` files or professionally formatted `.PDF` documents.
 
 ---
 
 ## Tech Stack
 
-- **Frontend**:
-  - Vanilla JavaScript for logic and DOM manipulation.
-  - Tailwind CSS for responsive and modern styling.
-- **PDF Export**: `jsPDF` library.
-- **Algorithm Implementation**:
-  - Custom tokenization and text processing functions.
-  - Frequency and keyword analysis.
-  - PageRank-based graph algorithm for sentence ranking.
+### Frontend
+- Vanilla JavaScript (ES6+ Modules)
+- Tailwind CSS v4 for modern glassmorphic styling
+
+### AI & NLP
+- **Transformers.js**: Client-side neural network execution via ONNX Runtime
+- **compromise**: Lightweight NLP and tokenization
+- **stopword**: Filtering non-essential terms
+
+### Export
+- **jsPDF** for PDF generation
+
+### Computation
+- **Web Workers** for non-blocking background processing
 
 ---
 
 ## Algorithms
 
-### 1. Frequency-Based Summarization
+### 1. Neural AI Summarization
+- Utilizes the `distilbart-cnn-6-6` transformer model
+- Downloads a quantized model directly to the browser cache via Transformers.js
+- Produces **abstractive summaries** by rephrasing input text rather than extracting sentences
 
-- Counts token frequencies in each sentence.
-- Ranks sentences based on the number of tokens.
-- Selects the top N sentences for the summary.
+### 2. Graph-Based (PageRank) Summarization
+- Builds a similarity matrix between sentences using cosine similarity
+- Applies **PageRank** to rank sentence importance based on graph centrality
+- Preserves original sentence order in the final summary
 
-### 2. Simple Summarization
+### 3. Frequency-Based Summarization
+- Counts token frequencies per sentence
+- Scores sentences based on word density
+- Selects top-ranked sentences based on desired length
 
-- Picks the first N sentences of the text as the summary.
-- Quick and useful for structured documents.
-
-### 3. Keyword-Based Summarization
-
-- Extracts top keywords using token frequency.
-- Scores sentences based on how many top keywords they contain.
-- Prioritizes sentences with higher keyword coverage.
-
-### 4. Graph-Based (PageRank) Summarization
-
-- Creates a similarity matrix for all sentences.
-- Applies **PageRank** to determine sentence importance.
-- Ranks sentences based on graph centrality.
-- Provides a more semantically informed summary.
+### 4. Simple Summarization
+- Extracts the first sentences from the text
+- Useful for structured documents where key information appears early
 
 ---
 
 ## Project Structure
 
+```text
 text-summarizer/
-├─ index.html # Main HTML file with textarea and buttons
-├─ main.js # Core frontend logic, DOM manipulation, summarization control
-├─ summarizer.js # Contains algorithms: processText, buildSimilarityMatrix, pageRank, extractKeywords
-├─ style.css # Optional custom styling
-├─ README.md # Project documentation
-└─ assets/ # Icons, fonts, or additional resources
+├─ src/
+│  ├─ main.js         # UI orchestration, DOM logic, Worker management
+│  ├─ worker.js       # Background thread for AI inference and heavy NLP
+│  ├─ summarizer.js   # NLP utilities: processText, similarity, PageRank
+│  └─ style.css       # Tailwind v4 entry point
+├─ index.html         # Main HTML file with Glassmorphism UI
+├─ vite.config.js     # Vite and Tailwind v4 plugin configuration
+└─ package.json       # Project dependencies and scripts
+```
 
 ---
 
 ## Installation
 
-1. Clone the repository:
-
+### Clone the repository
 ```bash
 git clone <repo-url>
 cd text-summarizer
+```
 
+### Install dependencies
+```bash
+npm install
+```
 
-
-2. Open `index.html` in any modern browser (Chrome, Firefox, Edge).
-3. No build step is required; the project uses vanilla JavaScript.
+### Start the development server
+```bash
+npm run dev
+```
 
 ---
 
 ## Usage
 
-1. Enter or paste text into the textarea.
-2. Choose a summarization algorithm from the dropdown:
-  - Frequency
-  - Simple
-  - Keywords
-  - Graph
-3. Adjust summary length (number of sentences) using the slider.
-4. For keyword-based summarization, select the number of top keywords to consider.
-5. Click **Summarize**.
-6. Interact with the results:
-  - Click keywords to highlight relevant sentences.
-  - Copy summary, download as TXT, or export as PDF.
+1. **Enter Text**  
+   Paste your content into the input area. The character counter will guide you (minimum: 50 characters).
 
----
+2. **Select Mode**  
+   Choose a summarization algorithm.  
+   > Note: **Neural mode** requires a one-time model download.
 
-## Example
+3. **Set Length**  
+   Use the slider to control the number of sentences in the summary.
 
-**Input:**
+4. **Summarize**  
+   Once the minimum length is reached, click the active **Summarize** button.
 
-> Artificial intelligence is transforming industries. It enables new technologies and improves efficiency. However, ethical challenges remain. AI applications range from healthcare to finance.
-
-**Frequency Summarizer Output:**
-
-- "Artificial intelligence is transforming industries."
-- "It enables new technologies and improves efficiency."
+5. **Manage Results**
+   - A typewriter effect indicates live generation.
+   - Use **Download .TXT** or **Export .PDF** to save the summary.
 
 ---
 
 ## Future Improvements
 
-- Implement Web Workers to run algorithms off the main thread for better performance on large texts.
-- Support multi-language tokenization and stopword removal.
-- Add a dark mode for the UI.
-- Integrate NLP libraries for more advanced semantic analysis.
-- Add save/load functionality for user sessions.
+- Multi-language tokenization and stopword support
+- OCR integration for summarizing scanned documents
+- Real-time **Ask SumBot** chat with summaries
+- Save/load functionality for user sessions and summary history
 
 ---
 
 ## How It Works
 
-1. User enters text → selects algorithm → chooses summary length/keyword count.
-2. Summarizer processes text using chosen algorithm:
-  - Tokenizes sentences and words.
-  - Builds frequency counts or similarity matrix.
-  - Applies ranking method (frequency, keyword scoring, or PageRank).
-3. Top sentences and keywords are rendered in the UI.
-4. User can interact with keywords and export summary.
-```
+**Non-Blocking Architecture**  
+When the user clicks *Summarize*, `main.js` sends the input to `worker.js`. Heavy processing runs in a background thread, keeping the UI responsive.
+
+**Conditional Loading**  
+The neural model is initialized **only when Neural mode is selected**. Traditional methods like PageRank run instantly without loading AI models.
+
+**Text Processing Pipeline**
+- Sentence tokenization and stopword filtering
+- Sentence scoring via frequency analysis or cosine similarity
+- Final summary returned from the worker to the main thread for rendering

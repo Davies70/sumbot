@@ -1,247 +1,106 @@
-import {
-  processText,
-  buildSimilarityMatrix,
-  pageRank,
-  extractKeywords,
-} from './summarizer.js';
-
-// --- DOM elements ---
 const inputEl = document.getElementById('inputText');
 const summarizeBtn = document.getElementById('summarizeBtn');
 const summaryLengthEl = document.getElementById('summaryLength');
-const lengthValueEl = document.getElementById('lengthValue');
+const algorithmEl = document.getElementById('algorithm');
 const placeholderEl = document.getElementById('placeholder');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const summaryResultsEl = document.getElementById('summaryResults');
-const algorithmEl = document.getElementById('algorithm');
-const keywordCountEl = document.getElementById('keywordCount');
+const progressBar = document.getElementById('progressBar');
+const progressContainer = document.getElementById('progressContainer');
+const loaderText = document.getElementById('loaderText');
 const wordCountEl = document.getElementById('wordCount');
-const keywordCountContainer = document.getElementById('keywordCountContainer');
 
-// --- Word count tracking ---
+const worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+
+function typeWriter(element, text) {
+    element.innerHTML = "";
+    element.className = "text-slate-300 leading-relaxed italic";
+    let i = 0;
+    const interval = setInterval(() => {
+        element.innerHTML += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+        summaryResultsEl.scrollTop = summaryResultsEl.scrollHeight;
+    }, 15);
+}
+
 inputEl.addEventListener('input', () => {
-  const words = inputEl.value.trim().split(/\s+/).filter(Boolean);
-  wordCountEl.textContent = `${words.length} word${
-    words.length !== 1 ? 's' : ''
-  }`;
+    const text = inputEl.value.trim();
+    const words = text.split(/\s+/).filter(Boolean);
+    wordCountEl.textContent = `${words.length} words`;
+    summarizeBtn.disabled = text.length < 20;
 });
 
-// --- Slider label update ---
-summaryLengthEl.addEventListener('input', () => {
-  lengthValueEl.textContent = summaryLengthEl.value;
-});
-
-function renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords) {
-  const topSentences = rankedIndexes
-    .sort((a, b) => a - b)
-    .map((i) => sentencesData[i].sentence);
-
-  // --- Render sentences ---
-  const summaryHTML = topSentences
-    .map(
-      (s, idx) =>
-        `<p class="mb-2 leading-relaxed sentence" data-index="${idx}">${s}</p>`
-    )
-    .join('');
-
-  // --- Keyword frequencies ---
-  const freqMap = {};
-  keywords.forEach((k) => {
-    freqMap[k] = (freqMap[k] || 0) + 1;
-  });
-  const maxFreq = Math.max(...Object.values(freqMap));
-
-  // --- Render keyword cloud/tags ---
-  const keywordsHTML = keywords.length
-    ? `
-    <div class="mt-6">
-      <h3 class="font-semibold text-gray-700 mb-2">🔑 Top Keywords</h3>
-      <div class="flex flex-wrap gap-2">
-        ${Object.entries(freqMap)
-          .map(([k, f]) => {
-            const size = 14 + (f / maxFreq) * 10; // scale font-size by frequency
-            return `<span 
-              class="keyword bg-blue-100 text-blue-700 px-2 py-1 rounded-full shadow cursor-pointer transition hover:bg-blue-200" 
-              style="font-size:${size}px" 
-              data-key="${k}">
-                ${k}
-            </span>`;
-          })
-          .join('')}
-      </div>
-    </div>
-  `
-    : '';
-
-  // --- Render control buttons ---
-  const controlsHTML = `
-    <div class="mt-6 flex flex-wrap gap-2">
-      <button id="copySummary" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">Copy</button>
-      <button id="downloadSummaryTxt" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Download TXT</button>
-      <button id="exportSummaryPdf" class="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600">Export PDF</button>
-    </div>
-  `;
-
-  // --- Render everything ---
-  summaryResultsEl.innerHTML = `
-    <h3 class="font-semibold text-gray-700 mb-3">📄 Summary</h3>
-    <div class="text-gray-800" id="summaryText">${summaryHTML}</div>
-    ${keywordsHTML}
-    ${controlsHTML}
-  `;
-
-  const summaryTextEl = document.getElementById('summaryText');
-  const summaryText = summaryTextEl.innerText;
-
-  // --- Button actions ---
-  document.getElementById('copySummary').addEventListener('click', () => {
-    navigator.clipboard
-      .writeText(summaryText)
-      .then(() => alert('Summary copied!'));
-  });
-
-  document
-    .getElementById('downloadSummaryTxt')
-    .addEventListener('click', () => {
-      const blob = new Blob([summaryText], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'summary.txt';
-      link.click();
-    });
-
-  document.getElementById('exportSummaryPdf').addEventListener('click', () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const lines = doc.splitTextToSize(summaryText, 180);
-    doc.text(lines, 10, 10);
-    doc.save('summary.pdf');
-  });
-
-  // --- Keyword highlighting ---
-  const activeKeywords = new Set(); // for multi-select
-  document.querySelectorAll('.keyword').forEach((el) => {
-    el.addEventListener('click', () => {
-      const key = el.dataset.key.toLowerCase();
-      if (activeKeywords.has(key)) {
-        activeKeywords.delete(key);
-        el.classList.remove('bg-yellow-200', 'text-yellow-900');
-      } else {
-        activeKeywords.add(key);
-        el.classList.add('bg-yellow-200', 'text-yellow-900');
-      }
-
-      document.querySelectorAll('.sentence').forEach((s) => {
-        const text = s.innerText.toLowerCase();
-        const highlight = Array.from(activeKeywords).some((k) =>
-          text.includes(k)
-        );
-        if (highlight) {
-          s.classList.add('bg-yellow-100', 'rounded');
-        } else {
-          s.classList.remove('bg-yellow-100', 'rounded');
-        }
-      });
-    });
-  });
-}
-
-// --- Frequency-based summarizer ---
-function frequencySummarize(text, topK) {
-  const sentencesData = processText(text);
-  const scores = sentencesData.map((s) => s.tokens.length);
-
-  const rankedIndexes = scores
-    .map((score, i) => ({ score, i }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map((x) => x.i);
-
-  return { sentencesData, rankedIndexes };
-}
-
-// --- Simple summarizer ---
-function simpleSummarize(text, topK) {
-  const sentencesData = processText(text);
-  const rankedIndexes = Array.from(
-    { length: Math.min(topK, sentencesData.length) },
-    (_, i) => i
-  );
-  return { sentencesData, rankedIndexes };
-}
-
-// --- Keyword-based summarizer ---
-function keywordSummarize(text, topK, keywordCount) {
-  const sentencesData = processText(text);
-  const keywords = extractKeywords(text, keywordCount, 'words');
-  const scores = sentencesData.map(
-    (s) => s.tokens.filter((t) => keywords.includes(t)).length
-  );
-  const rankedIndexes = scores
-    .map((score, i) => ({ score, i }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map((x) => x.i);
-  return { sentencesData, rankedIndexes, keywords };
-}
-
-// --- Main summarize flow ---
 summarizeBtn.addEventListener('click', () => {
-  const text = inputEl.value.trim();
-  if (!text) return;
-
-  // Show loader
-  placeholderEl.classList.add('hidden');
-  summaryResultsEl.classList.add('hidden');
-  loadingIndicator.classList.remove('hidden');
-  loadingIndicator.classList.add('flex');
-
-  setTimeout(() => {
+    const text = inputEl.value.trim();
     const algo = algorithmEl.value;
-    const topK = Number(summaryLengthEl.value);
-    const keywordCount = Number(keywordCountEl.value);
 
-    let sentencesData,
-      rankedIndexes,
-      keywords = [];
-
-    if (algo === 'frequency') {
-      ({ sentencesData, rankedIndexes } = frequencySummarize(text, topK));
-    } else if (algo === 'simple') {
-      ({ sentencesData, rankedIndexes } = simpleSummarize(text, topK));
-    } else if (algo === 'keywords') {
-      ({ sentencesData, rankedIndexes, keywords } = keywordSummarize(
-        text,
-        topK,
-        keywordCount
-      ));
+    placeholderEl.classList.add('hidden');
+    summaryResultsEl.classList.add('hidden');
+    loadingIndicator.classList.replace('hidden', 'flex');
+    
+    if (algo === 'neural') {
+        progressContainer.classList.remove('hidden');
+        loaderText.textContent = "Initializing Neural Engine...";
     } else {
-      sentencesData = processText(text);
-      const simMatrix = buildSimilarityMatrix(sentencesData, 0.1);
-      const scores = pageRank(simMatrix);
-      rankedIndexes = scores
-        .map((score, i) => ({ score, i }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, topK)
-        .map((x) => x.i);
-      keywords = extractKeywords(text, keywordCount, 'words');
+        progressContainer.classList.add('hidden');
+        loaderText.textContent = "Analyzing Text Structure...";
     }
 
-    renderSummaryAndKeywords(sentencesData, rankedIndexes, keywords);
-
-    // Show results
-    loadingIndicator.classList.add('hidden');
-    loadingIndicator.classList.remove('flex');
-
-    summaryResultsEl.classList.remove('hidden');
-  }, 300);
+    worker.postMessage({ text, algo, topK: Number(summaryLengthEl.value) });
 });
 
-// Toggle keyword count visibility
-algorithmEl.addEventListener('change', () => {
-  if (algorithmEl.value === 'keywords') {
-    keywordCountContainer.classList.remove('hidden');
-  } else {
-    keywordCountContainer.classList.add('hidden');
-  }
-});
+worker.onmessage = (e) => {
+    const { type, message, value, summary, isNeural } = e.data;
+
+    if (type === 'status') loaderText.textContent = message;
+    if (type === 'progress') progressBar.style.width = `${value}%`;
+    
+    if (type === 'result') {
+        loadingIndicator.classList.replace('flex', 'hidden');
+        summaryResultsEl.classList.remove('hidden');
+        
+        summaryResultsEl.innerHTML = `
+            <div id="typeTarget"></div>
+            <div id="exportControls" class="mt-8 flex flex-wrap gap-3 border-t border-slate-700 pt-6 opacity-0 transition-opacity duration-500">
+                <button id="downloadTxt" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold border border-slate-700 transition">Download .TXT</button>
+                <button id="downloadPdf" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-4 py-2 rounded-xl text-xs font-bold border border-blue-500/20 transition">Export .PDF</button>
+            </div>
+        `;
+        
+        const target = document.getElementById('typeTarget');
+        const controls = document.getElementById('exportControls');
+        
+        if (isNeural) {
+            typeWriter(target, summary);
+            setTimeout(() => controls.classList.remove('opacity-0'), 1000);
+        } else {
+            target.innerHTML = `<p class="text-slate-300 leading-relaxed">${summary}</p>`;
+            controls.classList.remove('opacity-0');
+        }
+
+        document.getElementById('downloadTxt').onclick = () => {
+            const blob = new Blob([summary], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'SumBot-Summary.txt'; a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        document.getElementById('downloadPdf').onclick = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFont("helvetica", "bold"); doc.setFontSize(20);
+            doc.text("SumBot AI Summary", 20, 20);
+            doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+            const splitText = doc.splitTextToSize(summary, 170);
+            doc.text(splitText, 20, 40);
+            doc.save("SumBot-Summary.pdf");
+        };
+    }
+
+    if (type === 'error') {
+        alert("Worker Error: " + message);
+        loadingIndicator.classList.replace('flex', 'hidden');
+    }
+};
