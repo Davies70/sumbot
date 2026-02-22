@@ -1,87 +1,189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SumBot AI | Intelligent Reading</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
-        .mesh-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 50%),
-                        radial-gradient(circle at 100% 100%, #1e3a8a 0%, transparent 50%);
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: #020617;
+        color: #f8fafc;
+      }
+      .mesh-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background:
+          radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 50%),
+          radial-gradient(circle at 100% 100%, #1e3a8a 0%, transparent 50%);
+      }
+      .glass {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .loading-shimmer {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(59, 130, 246, 0.1),
+          transparent
+        );
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
         }
-        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .loading-shimmer { background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        #progressBar { transition: width 0.3s ease; }
-        
-        /* Disabled state styling */
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            filter: grayscale(1);
-            pointer-events: none;
+        100% {
+          background-position: 200% 0;
         }
+      }
+      #progressBar {
+        transition: width 0.3s ease;
+      }
+
+      /* Disabled state styling */
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(1);
+        pointer-events: none;
+      }
     </style>
-</head>
-<body class="min-h-screen">
+  </head>
+  <body class="min-h-screen">
     <div class="mesh-bg"></div>
     <header class="p-8 max-w-7xl mx-auto flex justify-between items-center">
-        <h1 class="text-2xl font-extrabold tracking-tighter">SUMBOT<span class="text-blue-500">.AI</span></h1>
-        <div id="statusBadge" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-            <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span> Ready
-        </div>
+      <h1 class="text-2xl font-extrabold tracking-tighter">
+        SUMBOT<span class="text-blue-500">.AI</span>
+      </h1>
+      <div
+        id="statusBadge"
+        class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20"
+      >
+        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+        Ready
+      </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
-        <div class="lg:col-span-7 space-y-4">
-            <div class="glass rounded-3xl p-8 h-[550px] flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Source Document</span>
-                    <span id="wordCount" class="text-xs text-slate-500">0 words</span>
-                </div>
-                <textarea id="inputText" class="flex-1 bg-transparent border-none focus:ring-0 text-lg leading-relaxed text-slate-300 placeholder:text-slate-700 resize-none outline-none" placeholder="Paste your text here..."></textarea>
-                <div id="limitHint" class="text-[10px] mt-2 text-slate-500 uppercase tracking-wide">Enter at least 50 characters to activate</div>
-            </div>
+    <main
+      class="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12"
+    >
+      <div class="lg:col-span-7 space-y-4">
+        <div class="glass rounded-3xl p-8 h-[550px] flex flex-col">
+          <div class="flex justify-between items-center mb-6">
+            <span
+              class="text-[10px] font-bold uppercase tracking-widest text-slate-500"
+              >Source Document</span
+            >
+            <span id="wordCount" class="text-xs text-slate-500">0 words</span>
+          </div>
+          <textarea
+            id="inputText"
+            class="flex-1 bg-transparent border-none focus:ring-0 text-lg leading-relaxed text-slate-300 placeholder:text-slate-700 resize-none outline-none"
+            placeholder="Paste your text here..."
+          ></textarea>
+          <div
+            id="limitHint"
+            class="text-[10px] mt-2 text-slate-500 uppercase tracking-wide"
+          >
+            Enter at least 50 characters to activate
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 space-y-6">
+        <div class="glass rounded-3xl p-8 space-y-8">
+          <div>
+            <label
+              class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4"
+              >Summary Length</label
+            >
+            <input
+              id="summaryLength"
+              type="range"
+              min="1"
+              max="10"
+              value="3"
+              class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500 cursor-pointer"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <select
+              id="algorithm"
+              class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:border-blue-500 outline-none transition text-white"
+            >
+              <option value="neural">Neural (AI)</option>
+              <option value="frequency">PageRank (Fast)</option>
+              <option value="simple">Quick Extract</option>
+            </select>
+            <button
+              id="summarizeBtn"
+              disabled
+              class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+            >
+              Summarize
+            </button>
+          </div>
         </div>
 
-        <div class="lg:col-span-5 space-y-6">
-            <div class="glass rounded-3xl p-8 space-y-8">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Summary Length</label>
-                    <input id="summaryLength" type="range" min="1" max="10" value="3" class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500 cursor-pointer">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <select id="algorithm" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:border-blue-500 outline-none transition text-white">
-                        <option value="neural">Neural (AI)</option>
-                        <option value="frequency">PageRank (Fast)</option>
-                        <option value="simple">Quick Extract</option>
-                    </select>
-                    <button id="summarizeBtn" disabled class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95">Summarize</button>
-                </div>
-            </div>
+        <div
+          class="glass rounded-3xl p-8 min-h-[350px] relative overflow-hidden"
+        >
+          <div
+            id="placeholder"
+            class="h-full flex flex-col items-center justify-center opacity-30 text-center space-y-4 py-12"
+          >
+            <svg
+              class="w-12 h-12"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 11a3 3 0 110-6 3 3 0 010 6z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+            <p class="text-sm">Summary insights will appear here</p>
+          </div>
 
-            <div class="glass rounded-3xl p-8 min-h-[350px] relative overflow-hidden">
-                <div id="placeholder" class="h-full flex flex-col items-center justify-center opacity-30 text-center space-y-4 py-12">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 11a3 3 0 110-6 3 3 0 010 6z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    <p class="text-sm">Summary insights will appear here</p>
-                </div>
-                
-                <div id="loadingIndicator" class="hidden absolute inset-0 loading-shimmer flex-col items-center justify-center p-8 text-center">
-                    <div id="loaderText" class="text-blue-500 font-bold animate-pulse text-sm mb-4">Initializing...</div>
-                    <div id="progressContainer" class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden hidden">
-                        <div id="progressBar" class="bg-blue-500 h-full w-0"></div>
-                    </div>
-                </div>
-
-                <div id="summaryResults" class="hidden"></div>
+          <div
+            id="loadingIndicator"
+            class="hidden absolute inset-0 loading-shimmer flex-col items-center justify-center p-8 text-center"
+          >
+            <div
+              id="loaderText"
+              class="text-blue-500 font-bold animate-pulse text-sm mb-4"
+            >
+              Initializing...
             </div>
+            <div
+              id="progressContainer"
+              class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden hidden"
+            >
+              <div id="progressBar" class="bg-blue-500 h-full w-0"></div>
+            </div>
+          </div>
+
+          <div id="summaryResults" class="hidden"></div>
         </div>
+      </div>
     </main>
     <script type="module" src="./src//main.js"></script>
-</body>
+  </body>
 </html>
