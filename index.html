@@ -3,187 +3,189 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SumBot AI | Intelligent Reading</title>
-    <link rel="stylesheet" href="/style.css" />
+    <title>SumBot AI | Intelligent Text Summarization</title>
+
+    <link rel="stylesheet" href="/src/style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background: #020617;
-        color: #f8fafc;
-      }
-      .mesh-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background:
-          radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 50%),
-          radial-gradient(circle at 100% 100%, #1e3a8a 0%, transparent 50%);
-      }
-      .glass {
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .loading-shimmer {
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(59, 130, 246, 0.1),
-          transparent
-        );
-        background-size: 200% 100%;
-        animation: shimmer 2s infinite;
-      }
-      @keyframes shimmer {
-        0% {
-          background-position: -200% 0;
-        }
-        100% {
-          background-position: 200% 0;
-        }
-      }
-      #progressBar {
-        transition: width 0.3s ease;
-      }
-
-      /* Disabled state styling */
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        filter: grayscale(1);
-        pointer-events: none;
-      }
-    </style>
   </head>
-  <body class="min-h-screen">
-    <div class="mesh-bg"></div>
-    <header class="p-8 max-w-7xl mx-auto flex justify-between items-center">
-      <h1 class="text-2xl font-extrabold tracking-tighter">
-        SUMBOT<span class="text-blue-500">.AI</span>
-      </h1>
+  <body
+    class="bg-slate-950 text-slate-200 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.2),rgba(255,255,255,0))] selection:bg-blue-500/30 font-sans antialiased"
+  >
+    <div class="max-w-4xl mx-auto px-4 py-8 md:py-16 flex flex-col gap-6">
+      <header class="text-center space-y-3 mb-4">
+        <h1
+          class="text-3xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"
+        >
+          SumBot.AI
+        </h1>
+        <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
+          Paste your text below and let the machine distill the most important
+          information for you.
+        </p>
+      </header>
+
       <div
-        id="statusBadge"
-        class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20"
+        id="errorBanner"
+        class="hidden bg-red-500/10 border border-red-500/50 text-red-400 rounded-xl p-4 text-sm text-center font-medium backdrop-blur-sm"
+      ></div>
+
+      <main
+        class="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-4 md:p-8 shadow-2xl flex flex-col gap-6"
       >
-        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
-        Ready
-      </div>
-    </header>
-
-    <main
-      class="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12"
-    >
-      <div class="lg:col-span-7 space-y-4">
-        <div class="glass rounded-3xl p-8 h-[550px] flex flex-col">
-          <div class="flex justify-between items-center mb-6">
-            <span
-              class="text-[10px] font-bold uppercase tracking-widest text-slate-500"
-              >Source Document</span
-            >
-            <span id="wordCount" class="text-xs text-slate-500">0 words</span>
-          </div>
-          <textarea
-            id="inputText"
-            class="flex-1 bg-transparent border-none focus:ring-0 text-lg leading-relaxed text-slate-300 placeholder:text-slate-700 resize-none outline-none"
-            placeholder="Paste your text here..."
-          ></textarea>
-          <div
-            id="limitHint"
-            class="text-[10px] mt-2 text-slate-500 uppercase tracking-wide"
-          >
-            Enter at least 50 characters to activate
-          </div>
-        </div>
-      </div>
-
-      <div class="lg:col-span-5 space-y-6">
-        <div class="glass rounded-3xl p-8 space-y-8">
-          <div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-2">
             <label
-              class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4"
+              for="algorithm"
+              class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+              >Engine</label
+            >
+            <div class="relative">
+              <select
+                id="algorithm"
+                class="w-full appearance-none bg-slate-900/50 border border-slate-700 text-slate-200 text-sm md:text-base rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="neural">Neural Network (High Quality)</option>
+                <option value="extractive">Extractive (Instant/Offline)</option>
+              </select>
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <span
+              id="neuralWarning"
+              class="text-[10px] text-purple-400 italic transition-opacity"
+              >* Neural engine downloads ~25MB AI model on first run</span
+            >
+          </div>
+
+          <div id="lengthContainer" class="hidden flex-col gap-2">
+            <label
+              for="summaryLength"
+              class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
               >Summary Length</label
             >
-            <input
-              id="summaryLength"
-              type="range"
-              min="1"
-              max="10"
-              value="3"
-              class="w-full h-1 bg-slate-800 rounded-lg appearance-none accent-blue-500 cursor-pointer"
-            />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <select
-              id="algorithm"
-              class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:border-blue-500 outline-none transition text-white"
-            >
-              <option value="neural">Neural (AI)</option>
-              <option value="frequency">PageRank (Fast)</option>
-              <option value="simple">Quick Extract</option>
-            </select>
-            <button
-              id="summarizeBtn"
-              disabled
-              class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-            >
-              Summarize
-            </button>
+            <div class="relative">
+              <select
+                id="summaryLength"
+                class="w-full appearance-none bg-slate-900/50 border border-slate-700 text-slate-200 text-sm md:text-base rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="short">Short (~20% of original text)</option>
+                <option value="medium" selected>
+                  Medium (~35% of original text)
+                </option>
+                <option value="long">Long (~50% of original text)</option>
+              </select>
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div
-          class="glass rounded-3xl p-8 min-h-[350px] relative overflow-hidden"
-        >
+        <div class="flex flex-col gap-2">
+          <textarea
+            id="inputText"
+            rows="8"
+            placeholder="Paste your article, document, or essay here (minimum 100 words)..."
+            class="w-full bg-slate-900/40 border border-slate-700/50 text-slate-100 text-sm md:text-base rounded-xl p-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-y placeholder:text-slate-600 disabled:opacity-50"
+          ></textarea>
+
+          <div class="flex flex-wrap justify-between items-center mt-2 gap-4">
+            <span
+              id="wordCount"
+              class="text-xs font-medium text-slate-400 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700"
+              >0 words</span
+            >
+
+            <div class="flex gap-2">
+              <button
+                id="clearBtn"
+                class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 px-4 rounded-xl transition-all duration-200 active:scale-95 text-sm disabled:opacity-50 hidden"
+              >
+                Clear
+              </button>
+              <button
+                id="summarizeBtn"
+                disabled
+                class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-[0_0_15px_rgba(59,130,246,0.2)] hover:shadow-[0_0_25px_rgba(59,130,246,0.4)] text-sm md:text-base flex items-center gap-2"
+              >
+                Generate Summary
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/60 my-2" />
+
+        <div class="min-h-[150px] relative">
           <div
             id="placeholder"
-            class="h-full flex flex-col items-center justify-center opacity-30 text-center space-y-4 py-12"
+            class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm italic text-center"
           >
-            <svg
-              class="w-12 h-12"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 11a3 3 0 110-6 3 3 0 010 6z"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-            </svg>
-            <p class="text-sm">Summary insights will appear here</p>
+            Your summary will appear here...
           </div>
 
           <div
             id="loadingIndicator"
-            class="hidden absolute inset-0 loading-shimmer flex-col items-center justify-center p-8 text-center"
+            class="hidden absolute inset-0 flex flex-col items-center justify-center gap-4"
           >
-            <div
+            <span
               id="loaderText"
-              class="text-blue-500 font-bold animate-pulse text-sm mb-4"
+              class="text-sm md:text-base font-bold tracking-wide animate-pulse bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent"
             >
-              Initializing...
-            </div>
+              Initializing Engine...
+            </span>
             <div
               id="progressContainer"
-              class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden hidden"
+              class="hidden w-full max-w-xs h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700"
             >
-              <div id="progressBar" class="bg-blue-500 h-full w-0"></div>
+              <div
+                id="progressBar"
+                class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300 ease-out"
+              ></div>
             </div>
           </div>
 
-          <div id="summaryResults" class="hidden"></div>
+          <div
+            id="summaryResults"
+            class="hidden w-full text-sm md:text-base text-slate-200 leading-relaxed bg-slate-900/30 rounded-xl p-4 md:p-6 border border-slate-800/50"
+          ></div>
         </div>
-      </div>
-    </main>
-    <script type="module" src="./src//main.js"></script>
+      </main>
+
+      <footer class="text-center text-xs text-slate-500 mt-8">
+        Built with Transformers.js & Web Workers.
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
