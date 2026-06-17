@@ -4,6 +4,9 @@ import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
+  {
     files: ['**/*.{js,mjs,cjs}'],
     plugins: { js },
     extends: ['js/recommended'],
@@ -27,10 +30,6 @@ export default defineConfig([
 
       // Optional: warn for unused functions
       'no-unused-vars-except-underscored': 'off', // already handled above
-
-      // Warn for unused imports
-      'import/no-unused-modules': ['warn', { unusedExports: true }],
-
       // Optional: stricter checks for consistent usage
       'no-shadow': 'warn', // avoid variable shadowing
       'no-undef': 'error', // catch undefined variables
